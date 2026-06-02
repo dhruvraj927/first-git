@@ -13,3 +13,10 @@
     <li>Abstraction</li>
 </ol>
 
+<h2>NOTE</h2>
+<ol>
+<li>The <bold>main.cpp</bold> file contain the correct code which is combination of my actual code or some other ai <bold>claud</bold> code fore better representation.</li>
+<li>I design or write the code for understanding that how class form what kind of class form what <bold>attributes</bold> will present in call. </li>
+<li>For my code you see <bold>temp.cpp</bold> file , in this is write code in simle formate.</li>
+<li>Use the claud for the write the code in good or production way and make work faster</li>
+</ol>
