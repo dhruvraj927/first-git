@@ -18,6 +18,60 @@ unordered_map<string, double> exchangeRates = {
     {"AED", 22.7},
     {"JPY",  0.56}
 };
+double convert(double amount, const string& from, const string& to) {
+    if (exchangeRates.find(from) == exchangeRates.end() ||
+        exchangeRates.find(to)   == exchangeRates.end()) return -1;
+    double inr = amount * exchangeRates[from];
+    return inr / exchangeRates[to];
+}
+
+void showRates() {
+    cout << "\n  Currency Rates (1 unit = ? INR)\n";
+    printDash();
+    for (auto& r : exchangeRates)
+        cout << "  1 " << r.first << " = " << fixed << setprecision(2) << r.second << " INR\n";
+}
+
+
+struct Slip {
+    int    id;
+    string type;          // DEPOSIT / WITHDRAW / CONVERT / TRANSFER
+    string fromCurr;
+    string toCurr;
+    double fromAmount;
+    double toAmount;
+    string date;
+    string status;        // PENDING / APPROVED / REJECTED
+    string approvedBy;
+    string note;
+
+    void print() {
+        printLine();
+        cout << "        TRANSACTION SLIP\n";
+        printLine();
+        cout << "  Slip No    : TXN-" << setw(4) << setfill('0') << id << setfill(' ') << "\n";
+        cout << "  Type       : " << type       << "\n";
+        cout << "  Date       : " << date       << "\n";
+        printDash();
+        if (type == "CONVERT" || type == "TRANSFER") {
+            cout << "  From       : " << fixed << setprecision(2) << fromAmount
+                 << " " << fromCurr  << "\n";
+            cout << "  To         : " << fixed << setprecision(2) << toAmount
+                 << " " << toCurr    << "\n";
+        } else {
+            cout << "  Currency   : " << fromCurr << "\n";
+            cout << "  Amount     : " << fixed << setprecision(2) << fromAmount << "\n";
+        }
+        if (!note.empty())
+            cout << "  Note       : " << note << "\n";
+        printDash();
+        cout << "  Status     : " << status << "\n";
+        if (!approvedBy.empty())
+            cout << "  Approved By: " << approvedBy << "\n";
+        printLine();
+    }
+};
+
 
 class BankAccount {
     string accountNo;
@@ -41,11 +95,11 @@ public:
 };
 
 class Person {
-protected:
-    string name;
-    string email;
-    string password;
-public:
+    protected:
+        string name;
+        string email;
+        string password;
+    public:
     Person(string n, string e, string p)
         : name(n), email(e), password(p) {}
 
@@ -304,6 +358,46 @@ public:
     string getRole() { return role; }
     virtual ~Employee() {}
 };
+
+
+// ─────────────────────────────────────────────
+// HELPER: pick currency from list
+// ─────────────────────────────────────────────
+string pickCurrency() {
+    cout << "\n  Available currencies:\n";
+    int i = 1;
+    vector<string> keys;
+    for (auto& r : exchangeRates) {
+        cout << "  " << i++ << ". " << r.first << "\n";
+        keys.push_back(r.first);
+    }
+    cout << "  Choose (1-" << keys.size() << "): ";
+    int c; cin >> c;
+    if (c < 1 || c > (int)keys.size()) return "";
+    return keys[c - 1];
+}
+
+// ─────────────────────────────────────────────
+// APPROVAL FLOW:
+//   Employee verifies -> Manager approves
+//   Returns true if both approved
+// ─────────────────────────────────────────────
+bool approvalFlow(Slip& slip, Employee* emp, Manager* mgr) {
+    // if already rejected (e.g. insufficient funds) skip flow
+    if (slip.status == "REJECTED") {
+        cout << "\n  [AUTO-REJECT] " << slip.note << "\n";
+        slip.print();
+        return false;
+    }
+
+    cout << "\n  --- Transaction needs approval ---\n";
+    bool verified = emp->verifySlip(slip);
+    if (!verified) return false;
+
+    bool approved = mgr->approveSlip(slip);
+    return approved;
+}
+
 
 int main(){
     // ── setup: one employee, one manager (shared across system) ──
@@ -640,5 +734,4 @@ int main(){
     delete emp;
     delete mgr;
     return 0;
-}
 }
